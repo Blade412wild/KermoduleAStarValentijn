@@ -23,13 +23,14 @@ public class Astar
         int width = 10;
         int height = 10;
 
-        List<Node> closedNodes = new List<Node>();
+        List<Node> allNodes = new List<Node>();
         List<Node> openNodes = new List<Node>();
+        List<Node> closedNodes = new List<Node>();
         List<Node> neighbourList = new List<Node>();
         Node[,] nodeGrid = new Node[width, height];
 
         //make a node grid
-        nodeGrid = createVoid(height, width, openNodes);
+        nodeGrid = createVoid(height, width, allNodes);
 
         // ik bekijk het pad vanaf het perspectief vanaf de currentNode, dus ik loop eigenlijk het pad met een test node
         Node currentNode = nodeGrid[0, 0];
@@ -39,15 +40,16 @@ public class Astar
         //pathfinding loop
         while (foundPath == false)
         {
-            Debug.Log("currentNode postion = " + currentNode.position /*+ " HScore = " + neighbour.HScore*/);
+            Debug.Log("currentNode postion = " + currentNode.position);
+
             // Get neigbours
             Debug.Log("get neighbours");
-            neighbourList = GetNeighbours(currentNode, openNodes);
+            neighbourList = GetNeighbours(currentNode, allNodes);
             Debug.Log("calculate neighbours");
             calculateNeighbourValues(neighbourList, currentNode, endPos);
 
             Debug.Log("calculate new direction");
-            Vector2Int newDestination = CalculaterNewPos(neighbourList);
+            Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes);
             MoveCurrentNode(currentNode, newDestination);
 
             if (counter == 40)
@@ -73,7 +75,7 @@ public class Astar
         _currentNode.position = _newDestination;
     }
 
-    private Vector2Int CalculaterNewPos(List<Node> _neighbourList)
+    private Vector2Int CalculaterNewPos(List<Node> _neighbourList, List<Node> _closedList, List<Node> _openList)
     {
         // deze moet bij het begin op true, daardoor krijgt de besteFScore de waarde van de eerste neighbhour
         bool isBestFScoreNull = true;
@@ -101,6 +103,7 @@ public class Astar
             if (bestFScore == neighbour.FScore)
             {
                 newPos = neighbour.position;
+
             }
         }
 
@@ -108,7 +111,7 @@ public class Astar
         return newPos;
     }
 
-    private List<Node> GetNeighbours(Node currentNode, List<Node> openNodeList)
+    private List<Node> GetNeighbours(Node currentNode, List<Node> _allNodesList)
     {
         Vector2Int upperNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y + 1);
         Vector2Int lowerNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y - 1);
@@ -118,7 +121,7 @@ public class Astar
 
         List<Node> neighbourList = new List<Node>();
 
-        foreach (Node neighbour in openNodeList)
+        foreach (Node neighbour in _allNodesList)
         {
             if (neighbour.position == leftNeigbour || neighbour.position == rightNeibour || neighbour.position == upperNeigbour || neighbour.position == lowerNeigbour)
             {
@@ -128,7 +131,7 @@ public class Astar
 
         return neighbourList;
     }
-    private Node[,] createVoid(int _height, int _width, List<Node> _openNodes)
+    private Node[,] createVoid(int _height, int _width, List<Node> _allNodesList)
     {
         Node[,] nodeGrid = new Node[_width, _height];
 
@@ -141,7 +144,7 @@ public class Astar
                 node.position = new Vector2Int(x, y);
                 nodeGrid[x, y] = node;
 
-                _openNodes.Add(node);
+                _allNodesList.Add(node);
             }
         }
         return nodeGrid;
