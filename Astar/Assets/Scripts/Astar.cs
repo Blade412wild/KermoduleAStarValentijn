@@ -20,8 +20,8 @@ public class Astar
     public List<Vector2Int> FindPathToTarget(Vector2Int startPos, Vector2Int endPos, Cell[,] grid)
     {
         bool foundPath = false;
-        int width = 10;
-        int height = 10;
+        int width = 300;
+        int height = 300;
 
         List<Node> allNodes = new List<Node>();
         List<Node> openNodes = new List<Node>();
@@ -36,34 +36,43 @@ public class Astar
         Node currentNode = nodeGrid[0, 0];
         currentNode.GScore = 0;
 
+        // add de begin node to the open list
+        //Node beginNode = nodeGrid[0, 0];
+        //beginNode.GScore = 0;
+        //beginNode.HScore = Vector2.Distance(beginNode.position, endPos);
+        //openNodes.Add(beginNode);
+
+
+        
+
+
         int counter = 0;
         //pathfinding loop
         while (foundPath == false)
         {
+
+            Debug.Log("iteratie : " +  counter);
             Debug.Log("currentNode postion = " + currentNode.position);
 
             // Get neigbours
-            Debug.Log("get neighbours");
-            neighbourList = GetNeighbours(currentNode, allNodes);
-            Debug.Log("calculate neighbours");
+            neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes);
             calculateNeighbourValues(neighbourList, currentNode, endPos);
 
-            Debug.Log("calculate new direction");
             Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes);
             MoveCurrentNode(currentNode, newDestination);
 
-            if (counter == 40)
-            {
-                foundPath = true;
-            }
-            counter++;
+            GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            blok.transform.position = new Vector3(currentNode.position.x, 1, currentNode.position.y);
+
+
 
             if (currentNode.position == endPos)
             {
                 foundPath = true;
             }
-            GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            blok.transform.position = new Vector3(currentNode.position.x, 4, currentNode.position.y);
+
+
+            counter++;
         }
 
         return null;
@@ -82,36 +91,58 @@ public class Astar
         float bestFScore = 10000000.0f;
         Vector2Int newPos = new Vector2Int(0, 0);
 
+        Debug.Log("openlist count : " + _openList.Count);
         // getting de Fscore Data from the neigbours and comparing them
-        foreach (Node neighbour in _neighbourList)
+        foreach (Node openNode in _openList)
         {
+            Debug.Log("bestFScore = " + openNode.FScore);
             if (isBestFScoreNull == true)
             {
-                bestFScore = neighbour.FScore;
+                bestFScore = openNode.FScore;
                 isBestFScoreNull = false;
             }
 
-            if (isBestFScoreNull == false && bestFScore > neighbour.FScore)
+            if (isBestFScoreNull == false && bestFScore > openNode.FScore)
             {
-                bestFScore = neighbour.FScore;
+                bestFScore = openNode.FScore;
             }
         }
 
+        Node nodeWithBestFScore = null;
         // matching 
-        foreach (Node neighbour in _neighbourList)
+        foreach (Node openNode in _openList)
         {
-            if (bestFScore == neighbour.FScore)
+            if (bestFScore == openNode.FScore)
             {
-                newPos = neighbour.position;
-
+                nodeWithBestFScore = openNode;
+                newPos = openNode.position;
+                break;
             }
         }
+        _openList.Remove(nodeWithBestFScore);
+        Debug.Log("removed node form open list with position : " + nodeWithBestFScore.position);
+        _closedList.Add(nodeWithBestFScore);
+        Debug.Log("Added node to closed list with position : " + nodeWithBestFScore.position);
+
+
+        //foreach(Node openNode in _openList)
+        //{
+        //    if(openNode.position == new Vector2Int(0, 1))
+        //    {
+        //        Debug.Log("ja ik besta nog : " + openNode.position);
+        //    }
+        //}
+
+        //if (_openList.Contains(nodeWithBestFScore))
+        //{
+        //    Debug.Log("hey hey ik zit er nog in");
+        //}
 
 
         return newPos;
     }
 
-    private List<Node> GetNeighbours(Node currentNode, List<Node> _allNodesList)
+    private List<Node> GetNeighbours(Node currentNode, List<Node> _allNodesList, List<Node> _openList, Cell[,] _grid, List<Node> _closedNode)
     {
         Vector2Int upperNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y + 1);
         Vector2Int lowerNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y - 1);
@@ -123,10 +154,40 @@ public class Astar
 
         foreach (Node neighbour in _allNodesList)
         {
-            if (neighbour.position == leftNeigbour || neighbour.position == rightNeibour || neighbour.position == upperNeigbour || neighbour.position == lowerNeigbour)
+            //if (neighbour.position == leftNeigbour || neighbour.position == rightNeibour || neighbour.position == upperNeigbour || neighbour.position == lowerNeigbour)
+            //{
+            //    // check for walls
+            //    neighbourList.Add(neighbour);
+            //    _openList.Add(neighbour);
+            //}
+
+            if (neighbour.position == rightNeibour && _grid[rightNeibour.x, rightNeibour.y].HasWall(Wall.LEFT) != true && _closedNode.Contains(neighbour) != true)
             {
                 neighbourList.Add(neighbour);
+                _openList.Add(neighbour);
             }
+
+            if (neighbour.position == upperNeigbour && _grid[upperNeigbour.x, upperNeigbour.y].HasWall(Wall.DOWN) != true && _closedNode.Contains(neighbour) != true)
+            {
+                neighbourList.Add(neighbour);
+                _openList.Add(neighbour);
+            }
+
+            if (neighbour.position == lowerNeigbour && _grid[lowerNeigbour.x, lowerNeigbour.y].HasWall(Wall.UP) != true && _closedNode.Contains(neighbour) != true) 
+            {
+                neighbourList.Add(neighbour);
+                _openList.Add(neighbour);
+
+            }
+
+            if (neighbour.position == leftNeigbour && _grid[leftNeigbour.x, leftNeigbour.y].HasWall(Wall.RIGHT) != true && _closedNode.Contains(neighbour) != true) 
+            {
+                neighbourList.Add(neighbour);
+                _openList.Add(neighbour);
+
+            }
+
+
         }
 
         return neighbourList;
@@ -153,13 +214,12 @@ public class Astar
     private void calculateNeighbourValues(List<Node> _neigbourlist, Node _currentNode, Vector2Int _endPos)
     {
         int neigbourId = 1;
-        float bestFScore;
         foreach (Node neighbour in _neigbourlist)
         {
             CalculateValueH(_currentNode, _endPos, neighbour);
             CalculateValueG(_currentNode, neighbour);
 
-            Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + "GScore = " + neighbour.GScore + "FScore = " + neighbour.FScore);
+            Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore);
             neigbourId++;
 
         }
@@ -175,6 +235,10 @@ public class Astar
     private void CalculateValueG(Node _currentNode, Node _neigbour)
     {
         _neigbour.GScore = _currentNode.GScore + 1;
+    }
+    private void CheckForWalls(Node _neigbour, Cell[,] _grid)
+    {
+        _grid[100, 100].HasWall(Wall.RIGHT);
     }
 
 
