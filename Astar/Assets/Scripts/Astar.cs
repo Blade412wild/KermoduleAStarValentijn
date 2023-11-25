@@ -6,6 +6,8 @@ using System;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.Tracing;
+using UnityEngine.Animations;
+using TMPro;
 
 public class Astar
 {
@@ -33,17 +35,16 @@ public class Astar
         nodeGrid = createVoid(height, width, allNodes);
 
         // ik bekijk het pad vanaf het perspectief vanaf de currentNode, dus ik loop eigenlijk het pad met een test node
-        Node currentNode = nodeGrid[0, 0];
+        Node currentNode = nodeGrid[startPos.x, startPos.y];
         currentNode.GScore = 0;
 
         // add de begin node to the open list
-        //Node beginNode = nodeGrid[0, 0];
-        //beginNode.GScore = 0;
-        //beginNode.HScore = Vector2.Distance(beginNode.position, endPos);
+        Node beginNode = new Node(startPos);
+        beginNode.GScore = 0;
+        beginNode.HScore = Vector2.Distance(beginNode.position, endPos);
         //openNodes.Add(beginNode);
 
-
-        
+        Node endNode = nodeGrid[endPos.x, endPos.y];
 
 
         int counter = 0;
@@ -51,14 +52,14 @@ public class Astar
         while (foundPath == false)
         {
 
-            Debug.Log("iteratie : " +  counter);
+            Debug.Log("iteratie : " + counter);
+            Debug.Log("begin node : " + beginNode.position);
             Debug.Log("currentNode postion = " + currentNode.position);
 
             // Get neigbours
-            neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes);
+            neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
             calculateNeighbourValues(neighbourList, currentNode, endPos);
-
-            Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes);
+            Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes, currentNode);
             MoveCurrentNode(currentNode, newDestination);
 
             GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -69,6 +70,9 @@ public class Astar
             if (currentNode.position == endPos)
             {
                 foundPath = true;
+                Debug.Log("foundPath");
+                List<Vector2Int> path = RetracePath(beginNode, endNode);
+                return path;
             }
 
 
@@ -84,7 +88,7 @@ public class Astar
         _currentNode.position = _newDestination;
     }
 
-    private Vector2Int CalculaterNewPos(List<Node> _neighbourList, List<Node> _closedList, List<Node> _openList)
+    private Vector2Int CalculaterNewPos(List<Node> _neighbourList, List<Node> _closedList, List<Node> _openList, Node _currentNode)
     {
         // deze moet bij het begin op true, daardoor krijgt de besteFScore de waarde van de eerste neighbhour
         bool isBestFScoreNull = true;
@@ -105,6 +109,7 @@ public class Astar
             if (isBestFScoreNull == false && bestFScore > openNode.FScore)
             {
                 bestFScore = openNode.FScore;
+                openNode.parent = _currentNode;
             }
         }
 
@@ -142,7 +147,7 @@ public class Astar
         return newPos;
     }
 
-    private List<Node> GetNeighbours(Node currentNode, List<Node> _allNodesList, List<Node> _openList, Cell[,] _grid, List<Node> _closedNode)
+    private List<Node> GetNeighbours(Node currentNode, List<Node> _allNodesList, List<Node> _openList, Cell[,] _grid, List<Node> _closedNode, Vector2Int _endPos)
     {
         Vector2Int upperNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y + 1);
         Vector2Int lowerNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y - 1);
@@ -154,12 +159,6 @@ public class Astar
 
         foreach (Node neighbour in _allNodesList)
         {
-            //if (neighbour.position == leftNeigbour || neighbour.position == rightNeibour || neighbour.position == upperNeigbour || neighbour.position == lowerNeigbour)
-            //{
-            //    // check for walls
-            //    neighbourList.Add(neighbour);
-            //    _openList.Add(neighbour);
-            //}
 
             if (neighbour.position == rightNeibour && _grid[rightNeibour.x, rightNeibour.y].HasWall(Wall.LEFT) != true && _closedNode.Contains(neighbour) != true)
             {
@@ -173,21 +172,34 @@ public class Astar
                 _openList.Add(neighbour);
             }
 
-            if (neighbour.position == lowerNeigbour && _grid[lowerNeigbour.x, lowerNeigbour.y].HasWall(Wall.UP) != true && _closedNode.Contains(neighbour) != true) 
+            if (neighbour.position == lowerNeigbour && _grid[lowerNeigbour.x, lowerNeigbour.y].HasWall(Wall.UP) != true && _closedNode.Contains(neighbour) != true)
             {
                 neighbourList.Add(neighbour);
                 _openList.Add(neighbour);
 
             }
 
-            if (neighbour.position == leftNeigbour && _grid[leftNeigbour.x, leftNeigbour.y].HasWall(Wall.RIGHT) != true && _closedNode.Contains(neighbour) != true) 
+            if (neighbour.position == leftNeigbour && _grid[leftNeigbour.x, leftNeigbour.y].HasWall(Wall.RIGHT) != true && _closedNode.Contains(neighbour) != true)
             {
                 neighbourList.Add(neighbour);
                 _openList.Add(neighbour);
 
             }
 
+            ////check if there is a shoter path to the neigbour
+            //float newMovementCostToNeigbour = currentNode.GScore + Vector2Int.Distance(currentNode.position, neighbour.position);
+            //if (newMovementCostToNeigbour < neighbour.GScore || !_openList.Contains(neighbour))
+            //{
+            //    Debug.Log("newmovement cost was lower");
+            //    neighbour.GScore = newMovementCostToNeigbour;
+            //    neighbour.HScore = Vector2Int.Distance(neighbour.position, _endPos);
+            //    neighbour.parent = currentNode;
+            //}
 
+            //if (_openList.Contains(neighbour))
+            //{
+            //    neighbourList.Add(neighbour);
+            //}
         }
 
         return neighbourList;
@@ -236,10 +248,24 @@ public class Astar
     {
         _neigbour.GScore = _currentNode.GScore + 1;
     }
-    private void CheckForWalls(Node _neigbour, Cell[,] _grid)
+    private List<Vector2Int> RetracePath(Node _beginNode, Node _endNode)
     {
-        _grid[100, 100].HasWall(Wall.RIGHT);
+        List<Vector2Int> path = new List<Vector2Int>();
+        Node currentNode = _endNode;
+
+        Debug.Log("voor while loop");
+        Debug.Log("currentpos = " + currentNode.position + " beginPos : " + _beginNode.position);
+        while (currentNode.position != _beginNode.position)
+        {
+            path.Add(currentNode.position);
+            currentNode = currentNode.parent;
+            Debug.Log("de stappen die de agent moet maken is Pos" + currentNode.position);
+        }
+
+        path.Reverse();
+        return path;
     }
+
 
 
 
