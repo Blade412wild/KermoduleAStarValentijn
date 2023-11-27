@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class Astar
@@ -53,6 +54,7 @@ public class Astar
                 foundPath = true;
                 Debug.Log("foundPath");
                 List<Vector2Int> path = RetracePath(beginNode, endNode);
+                ListSortTest(openNodes);
                 return path;
             }
             else
@@ -89,6 +91,8 @@ public class Astar
         Vector2Int newPos = new Vector2Int(0, 0);
 
         Debug.Log("openlist count : " + _openList.Count);
+
+
         // getting de Fscore Data from the neigbours and comparing them
         foreach (Node openNode in _openList)
         {
@@ -265,6 +269,36 @@ public class Astar
 
         path.Reverse();
         return path;
+    }
+
+    private void ListSortTest(List<Node> OpenList)
+    {
+        List<float> fCostList = new List<float>(); 
+        LinkedList<float> list = new LinkedList<float>();
+
+        // unsort Nodes
+        foreach (Node node in OpenList)
+        {
+            //Debug.Log(node);
+            fCostList.Add(node.FScore);
+        }
+
+        Debug.Log("--------unsorted---------");
+
+        foreach(float fScore in fCostList)
+        {
+            Debug.Log(fScore);
+        }
+
+        fCostList.Sort();
+
+        Debug.Log("--------sorted---------");
+
+        foreach (float pos in fCostList)
+        {
+            Debug.Log(pos);
+        }
+
     }
 
 
