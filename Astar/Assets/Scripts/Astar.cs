@@ -1,13 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
-using System;
-using System.Threading;
-using System.Runtime.CompilerServices;
-using System.Diagnostics.Tracing;
-using UnityEngine.Animations;
-using TMPro;
 
 public class Astar
 {
@@ -42,6 +34,7 @@ public class Astar
         Node beginNode = new Node(startPos);
         beginNode.GScore = 0;
         beginNode.HScore = Vector2.Distance(beginNode.position, endPos);
+        closedNodes.Add(beginNode);
         //openNodes.Add(beginNode);
 
         Node endNode = nodeGrid[endPos.x, endPos.y];
@@ -53,19 +46,7 @@ public class Astar
         {
 
             Debug.Log("iteratie : " + counter);
-            Debug.Log("begin node : " + beginNode.position);
             Debug.Log("currentNode postion = " + currentNode.position);
-
-            // Get neigbours
-            neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
-            calculateNeighbourValues(neighbourList, currentNode, endPos);
-            Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes, currentNode);
-            MoveCurrentNode(currentNode, newDestination);
-
-            GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            blok.transform.position = new Vector3(currentNode.position.x, 1, currentNode.position.y);
-
-
 
             if (currentNode.position == endPos)
             {
@@ -74,9 +55,21 @@ public class Astar
                 List<Vector2Int> path = RetracePath(beginNode, endNode);
                 return path;
             }
+            else
+            {
+                // Get neigbours
+                neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
+                calculateNeighbourValues(neighbourList, currentNode, endPos, closedNodes);
+                Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes, currentNode);
+                MoveCurrentNode(currentNode, newDestination);
 
+                //GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                //blok.transform.position = new Vector3(currentNode.position.x, 1, currentNode.position.y)
 
-            counter++;
+                counter++;
+
+            }
+
         }
 
         return null;
@@ -99,7 +92,7 @@ public class Astar
         // getting de Fscore Data from the neigbours and comparing them
         foreach (Node openNode in _openList)
         {
-            Debug.Log("bestFScore = " + openNode.FScore);
+            //Debug.Log("bestFScore = " + openNode.FScore);
             if (isBestFScoreNull == true)
             {
                 bestFScore = openNode.FScore;
@@ -109,9 +102,14 @@ public class Astar
             if (isBestFScoreNull == false && bestFScore > openNode.FScore)
             {
                 bestFScore = openNode.FScore;
-                openNode.parent = _currentNode;
+                //openNode.parent = _currentNode;
             }
+
+            
         }
+
+        List<Node> hallo = new List<Node>();
+        hallo.Sort();
 
         Node nodeWithBestFScore = null;
         // matching 
@@ -121,6 +119,7 @@ public class Astar
             {
                 nodeWithBestFScore = openNode;
                 newPos = openNode.position;
+
                 break;
             }
         }
@@ -128,21 +127,6 @@ public class Astar
         Debug.Log("removed node form open list with position : " + nodeWithBestFScore.position);
         _closedList.Add(nodeWithBestFScore);
         Debug.Log("Added node to closed list with position : " + nodeWithBestFScore.position);
-
-
-        //foreach(Node openNode in _openList)
-        //{
-        //    if(openNode.position == new Vector2Int(0, 1))
-        //    {
-        //        Debug.Log("ja ik besta nog : " + openNode.position);
-        //    }
-        //}
-
-        //if (_openList.Contains(nodeWithBestFScore))
-        //{
-        //    Debug.Log("hey hey ik zit er nog in");
-        //}
-
 
         return newPos;
     }
@@ -185,21 +169,6 @@ public class Astar
                 _openList.Add(neighbour);
 
             }
-
-            ////check if there is a shoter path to the neigbour
-            //float newMovementCostToNeigbour = currentNode.GScore + Vector2Int.Distance(currentNode.position, neighbour.position);
-            //if (newMovementCostToNeigbour < neighbour.GScore || !_openList.Contains(neighbour))
-            //{
-            //    Debug.Log("newmovement cost was lower");
-            //    neighbour.GScore = newMovementCostToNeigbour;
-            //    neighbour.HScore = Vector2Int.Distance(neighbour.position, _endPos);
-            //    neighbour.parent = currentNode;
-            //}
-
-            //if (_openList.Contains(neighbour))
-            //{
-            //    neighbourList.Add(neighbour);
-            //}
         }
 
         return neighbourList;
@@ -223,15 +192,16 @@ public class Astar
         return nodeGrid;
     }
 
-    private void calculateNeighbourValues(List<Node> _neigbourlist, Node _currentNode, Vector2Int _endPos)
+    private void calculateNeighbourValues(List<Node> _neigbourlist, Node _currentNode, Vector2Int _endPos, List<Node> _closedList)
     {
         int neigbourId = 1;
         foreach (Node neighbour in _neigbourlist)
         {
+            SetParent(_currentNode, neighbour, _closedList);
             CalculateValueH(_currentNode, _endPos, neighbour);
             CalculateValueG(_currentNode, neighbour);
 
-            Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore);
+            Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore + " || neigbourParent position : " + neighbour.parent.position + " parent G score : " + neighbour.parent.GScore);
             neigbourId++;
 
         }
@@ -246,19 +216,50 @@ public class Astar
     }
     private void CalculateValueG(Node _currentNode, Node _neigbour)
     {
-        _neigbour.GScore = _currentNode.GScore + 1;
+
+        _neigbour.GScore = _neigbour.parent.GScore + 1;
+        //_currentNode.GScore = _currentNode.GScore + 1;
+
+    }
+    private void SetParent(Node _currentNode, Node _neighbour, List<Node> _closedList)
+    {
+        Node parent = null;
+
+        foreach (Node node in _closedList)
+        {
+            if (node.position == _currentNode.position)
+            {
+                parent = node;
+            }
+        }
+
+        if (parent != null)
+        {
+            _neighbour.parent = parent;
+        }
+        else
+        {
+            Debug.Log(" parent = null");
+        }
+
+
+
+
     }
     private List<Vector2Int> RetracePath(Node _beginNode, Node _endNode)
     {
         List<Vector2Int> path = new List<Vector2Int>();
         Node currentNode = _endNode;
 
-        Debug.Log("voor while loop");
+        Debug.Log("--------while loop--------");
         Debug.Log("currentpos = " + currentNode.position + " beginPos : " + _beginNode.position);
         while (currentNode.position != _beginNode.position)
         {
+            Debug.Log("currentNode = " + currentNode.position);
+            Debug.Log("currentNode Parent = " + currentNode.parent.position);//// probleem //// de parent van de end node staat gelijk aan de end node
             path.Add(currentNode.position);
             currentNode = currentNode.parent;
+            Debug.Log(" new current parent pos = " + currentNode.position);
             Debug.Log("de stappen die de agent moet maken is Pos" + currentNode.position);
         }
 
