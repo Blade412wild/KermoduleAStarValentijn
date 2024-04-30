@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -12,11 +13,15 @@ public class Astar
     /// <param name="endPos"></param>
     /// <param name="grid"></param>
     /// <returns></returns>
+    /// 
+
+    float previousTime;
     public List<Vector2Int> FindPathToTarget(Vector2Int startPos, Vector2Int endPos, Cell[,] grid)
     {
+        DateTime startTime = DateTime.Now;
         bool foundPath = false;
-        int width = 300;
-        int height = 300;
+        int width = grid.GetLength(0);
+        int height = grid.GetLength(1);
 
         List<Node> allNodes = new List<Node>();
         List<Node> openNodes = new List<Node>();
@@ -46,8 +51,8 @@ public class Astar
         while (foundPath == false)
         {
 
-            Debug.Log("iteratie : " + counter);
-            Debug.Log("currentNode postion = " + currentNode.position);
+            //Debug.Log("iteratie : " + counter);
+            //Debug.Log("currentNode postion = " + currentNode.position);
 
             if (currentNode.position == endPos)
             {
@@ -55,6 +60,10 @@ public class Astar
                 Debug.Log("foundPath");
                 List<Vector2Int> path = RetracePath(beginNode, endNode);
                 ListSortTest(openNodes);
+                DateTime endTime = DateTime.Now;
+
+                TimeSpan timePast = endTime - startTime;
+                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast.TotalMilliseconds));
                 return path;
             }
             else
@@ -74,6 +83,8 @@ public class Astar
 
         }
 
+
+
         return null;
     }
 
@@ -90,7 +101,7 @@ public class Astar
         float bestFScore = 10000000.0f;
         Vector2Int newPos = new Vector2Int(0, 0);
 
-        Debug.Log("openlist count : " + _openList.Count);
+        //Debug.Log("openlist count : " + _openList.Count);
 
 
         // getting de Fscore Data from the neigbours and comparing them
@@ -128,9 +139,9 @@ public class Astar
             }
         }
         _openList.Remove(nodeWithBestFScore);
-        Debug.Log("removed node form open list with position : " + nodeWithBestFScore.position);
+        //Debug.Log("removed node form open list with position : " + nodeWithBestFScore.position);
         _closedList.Add(nodeWithBestFScore);
-        Debug.Log("Added node to closed list with position : " + nodeWithBestFScore.position);
+        //Debug.Log("Added node to closed list with position : " + nodeWithBestFScore.position);
 
         return newPos;
     }
@@ -205,7 +216,7 @@ public class Astar
             CalculateValueH(_currentNode, _endPos, neighbour);
             CalculateValueG(_currentNode, neighbour);
 
-            Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore + " || neigbourParent position : " + neighbour.parent.position + " parent G score : " + neighbour.parent.GScore);
+           //Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore + " || neigbourParent position : " + neighbour.parent.position + " parent G score : " + neighbour.parent.GScore);
             neigbourId++;
 
         }
@@ -243,7 +254,7 @@ public class Astar
         }
         else
         {
-            Debug.Log(" parent = null");
+            //Debug.Log(" parent = null");
         }
 
 
@@ -255,16 +266,16 @@ public class Astar
         List<Vector2Int> path = new List<Vector2Int>();
         Node currentNode = _endNode;
 
-        Debug.Log("--------while loop--------");
-        Debug.Log("currentpos = " + currentNode.position + " beginPos : " + _beginNode.position);
+        //Debug.Log("--------while loop--------");
+        //Debug.Log("currentpos = " + currentNode.position + " beginPos : " + _beginNode.position);
         while (currentNode.position != _beginNode.position)
         {
-            Debug.Log("currentNode = " + currentNode.position);
-            Debug.Log("currentNode Parent = " + currentNode.parent.position);//// probleem //// de parent van de end node staat gelijk aan de end node
+            //Debug.Log("currentNode = " + currentNode.position);
+            //Debug.Log("currentNode Parent = " + currentNode.parent.position);//// probleem //// de parent van de end node staat gelijk aan de end node
             path.Add(currentNode.position);
             currentNode = currentNode.parent;
-            Debug.Log(" new current parent pos = " + currentNode.position);
-            Debug.Log("de stappen die de agent moet maken is Pos" + currentNode.position);
+            //Debug.Log(" new current parent pos = " + currentNode.position);
+            //Debug.Log("de stappen die de agent moet maken is Pos" + currentNode.position);
         }
 
         path.Reverse();
@@ -283,20 +294,20 @@ public class Astar
             fCostList.Add(node.FScore);
         }
 
-        Debug.Log("--------unsorted---------");
+        //Debug.Log("--------unsorted---------");
 
         foreach(float fScore in fCostList)
         {
-            Debug.Log(fScore);
+            //Debug.Log(fScore);
         }
 
         fCostList.Sort();
 
-        Debug.Log("--------sorted---------");
+        //Debug.Log("--------sorted---------");
 
         foreach (float pos in fCostList)
         {
-            Debug.Log(pos);
+            //Debug.Log(pos);
         }
 
     }
