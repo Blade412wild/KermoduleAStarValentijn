@@ -29,9 +29,10 @@ public class Astar
         List<Node> closedNodes = new List<Node>();
         List<Node> neighbourList = new List<Node>();
         Node[,] nodeGrid = new Node[width, height];
+        Dictionary<Vector2Int, Node> allNodesDic = new Dictionary<Vector2Int, Node>();
 
         //make a node grid
-        nodeGrid = createVoid(height, width, allNodes);
+        nodeGrid = createVoid(height, width, allNodes, allNodesDic);
 
         // ik bekijk het pad vanaf het perspectief vanaf de currentNode, dus ik loop eigenlijk het pad met een test node
         Node currentNode = nodeGrid[startPos.x, startPos.y];
@@ -45,6 +46,9 @@ public class Astar
 
         Node endNode = nodeGrid[endPos.x, endPos.y];
 
+        DateTime startTime2;
+        DateTime endTime2;
+        TimeSpan timePast2;
 
         int counter = 0;
         //pathfinding loop
@@ -65,10 +69,32 @@ public class Astar
             }
             else
             {
+                Debug.Log("---------- getting neighbours --------");
                 // Get neigbours
-                neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
+                startTime2 = DateTime.Now;
+
+                //neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
+                neighbourList = GetNeighbours2(currentNode, allNodes, openNodes, grid, closedNodes, endPos, allNodesDic);
+
+                endTime2 = DateTime.Now;
+                timePast2 = endTime2 - startTime2;
+                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast2.TotalMilliseconds));
+
+                Debug.Log("---------- calculate neighbours --------");
+                startTime2 = DateTime.Now;
                 calculateNeighbourValues(neighbourList, currentNode, endPos, closedNodes);
+                endTime2 = DateTime.Now;
+                timePast2 = endTime2 - startTime2;
+                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast2.TotalMilliseconds));
+
+                Debug.Log("---------- calculate Best FScore --------");
+                startTime2 = DateTime.Now;
                 Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes, currentNode);
+
+                endTime2 = DateTime.Now;
+                timePast2 = endTime2 - startTime2;
+                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast2.TotalMilliseconds));
+
                 MoveCurrentNode(currentNode, newDestination);
 
                 //GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -82,7 +108,6 @@ public class Astar
         return null;
     }
 
-
     private void MoveCurrentNode(Node _currentNode, Vector2Int _newDestination)
     {
         _currentNode.position = _newDestination;
@@ -92,7 +117,7 @@ public class Astar
     {
         // deze moet bij het begin op true, daardoor krijgt de besteFScore de waarde van de eerste neighbhour
         bool isBestFScoreNull = true;
-        float bestFScore = 0.0f;
+        float bestFScore = Mathf.Infinity;
         Vector2Int newPos = new Vector2Int(0, 0);
 
         //Debug.Log("openlist count : " + _openList.Count);
@@ -177,7 +202,67 @@ public class Astar
 
         return neighbourList;
     }
-    private Node[,] createVoid(int _height, int _width, List<Node> _allNodesList)
+
+    private List<Node> GetNeighbours2(Node currentNode, List<Node> _allNodesList, List<Node> _openList, Cell[,] _grid, List<Node> _closedNode, Vector2Int _endPos, Dictionary<Vector2Int, Node> _allNodesDic)
+    {
+        Vector2Int upperNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y + 1);
+        Vector2Int lowerNeigbour = new Vector2Int(currentNode.position.x, currentNode.position.y - 1);
+        Vector2Int rightNeigbour = new Vector2Int(currentNode.position.x + 1, currentNode.position.y);
+        Vector2Int leftNeigbour = new Vector2Int(currentNode.position.x - 1, currentNode.position.y);
+
+
+        List<Node> neighbourList = new List<Node>();
+
+
+        if (_allNodesDic.ContainsKey(upperNeigbour))
+        {
+
+            if (_grid[upperNeigbour.x, upperNeigbour.y].HasWall(Wall.DOWN) != true && _closedNode.Contains(_allNodesDic[upperNeigbour]) != true)
+            {
+                neighbourList.Add(_allNodesDic[upperNeigbour]);
+                _openList.Add(_allNodesDic[upperNeigbour]);
+            }
+        }
+
+        if (_allNodesDic.ContainsKey(lowerNeigbour))
+        {
+
+            if (_grid[lowerNeigbour.x, lowerNeigbour.y].HasWall(Wall.UP) != true && _closedNode.Contains(_allNodesDic[lowerNeigbour]) != true)
+            {
+                neighbourList.Add(_allNodesDic[lowerNeigbour]);
+                _openList.Add(_allNodesDic[lowerNeigbour]);
+            }
+
+        }
+
+        if (_allNodesDic.ContainsKey(rightNeigbour))
+        {
+            if (_grid[rightNeigbour.x, rightNeigbour.y].HasWall(Wall.LEFT) != true && _closedNode.Contains(_allNodesDic[rightNeigbour]) != true)
+            {
+                neighbourList.Add(_allNodesDic[rightNeigbour]);
+                _openList.Add(_allNodesDic[rightNeigbour]);
+            }
+        }
+
+        if (_allNodesDic.ContainsKey(leftNeigbour))
+        {
+            if (_grid[leftNeigbour.x, leftNeigbour.y].HasWall(Wall.RIGHT) != true && _closedNode.Contains(_allNodesDic[leftNeigbour]) != true)
+            {
+                neighbourList.Add(_allNodesDic[leftNeigbour]);
+                _openList.Add(_allNodesDic[leftNeigbour]);
+            }
+
+        }
+
+
+
+
+
+
+
+        return neighbourList;
+    }
+    private Node[,] createVoid(int _height, int _width, List<Node> _allNodesList, Dictionary<Vector2Int, Node> _allNodeDic)
     {
         Node[,] nodeGrid = new Node[_width, _height];
 
@@ -191,6 +276,8 @@ public class Astar
                 nodeGrid[x, y] = node;
 
                 _allNodesList.Add(node);
+                _allNodeDic.Add(node.position, node);
+
             }
         }
         return nodeGrid;
@@ -205,7 +292,7 @@ public class Astar
             CalculateValueH(_currentNode, _endPos, neighbour);
             CalculateValueG(_currentNode, neighbour);
 
-           //Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore + " || neigbourParent position : " + neighbour.parent.position + " parent G score : " + neighbour.parent.GScore);
+            //Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore + " || neigbourParent position : " + neighbour.parent.position + " parent G score : " + neighbour.parent.GScore);
             neigbourId++;
 
         }
