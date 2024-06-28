@@ -46,9 +46,6 @@ public class Astar
 
         Node endNode = nodeGrid[endPos.x, endPos.y];
 
-        DateTime startTime2;
-        DateTime endTime2;
-        TimeSpan timePast2;
 
         int counter = 0;
         //pathfinding loop
@@ -60,7 +57,6 @@ public class Astar
                 foundPath = true;
                 Debug.Log("foundPath");
                 List<Vector2Int> path = RetracePath(beginNode, endNode);
-                //ListSortTest(openNodes);
                 DateTime endTime = DateTime.Now;
 
                 TimeSpan timePast = endTime - startTime;
@@ -69,36 +65,10 @@ public class Astar
             }
             else
             {
-                Debug.Log("---------- getting neighbours --------");
-                // Get neigbours
-                startTime2 = DateTime.Now;
-
                 neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
-                //neighbourList = GetNeighbours2(currentNode, allNodes, openNodes, grid, closedNodes, endPos, allNodesDic);
-
-                endTime2 = DateTime.Now;
-                timePast2 = endTime2 - startTime2;
-                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast2.TotalMilliseconds));
-
-                Debug.Log("---------- calculate neighbours --------");
-                startTime2 = DateTime.Now;
                 calculateNeighbourValues(neighbourList, currentNode, endPos, closedNodes);
-                endTime2 = DateTime.Now;
-                timePast2 = endTime2 - startTime2;
-                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast2.TotalMilliseconds));
-
-                Debug.Log("---------- calculate Best FScore --------");
-                startTime2 = DateTime.Now;
                 Vector2Int newDestination = GetNewPos(neighbourList, closedNodes, openNodes, currentNode);
-
-                endTime2 = DateTime.Now;
-                timePast2 = endTime2 - startTime2;
-                Debug.Log(String.Format("Time Spent: {0} Milliseconds", timePast2.TotalMilliseconds));
-
                 MoveCurrentNode(currentNode, newDestination);
-
-                //GameObject blok = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                //blok.transform.position = new Vector3(currentNode.position.x, 1, currentNode.position.y)
 
                 counter++;
 
@@ -118,7 +88,7 @@ public class Astar
         // deze moet bij het begin op true, daardoor krijgt de besteFScore de waarde van de eerste neighbhour
         bool isBestFScoreNull = true;
         float bestFScore = Mathf.Infinity;
-        Node bestNode = new Node(); 
+        Node bestNode = new Node();
 
         // getting de Fscore Data from the neigbours and comparing them
         foreach (Node openNode in _openList)
@@ -237,12 +207,6 @@ public class Astar
 
         }
 
-
-
-
-
-
-
         return neighbourList;
     }
     private Node[,] createVoid(int _height, int _width, List<Node> _allNodesList, Dictionary<Vector2Int, Node> _allNodeDic)
@@ -323,16 +287,12 @@ public class Astar
         List<Vector2Int> path = new List<Vector2Int>();
         Node currentNode = _endNode;
 
-        //Debug.Log("--------while loop--------");
-        //Debug.Log("currentpos = " + currentNode.position + " beginPos : " + _beginNode.position);
         while (currentNode.position != _beginNode.position)
         {
-            //Debug.Log("currentNode = " + currentNode.position);
-            //Debug.Log("currentNode Parent = " + currentNode.parent.position);//// probleem //// de parent van de end node staat gelijk aan de end node
+
             path.Add(currentNode.position);
             currentNode = currentNode.parent;
-            //Debug.Log(" new current parent pos = " + currentNode.position);
-            //Debug.Log("de stappen die de agent moet maken is Pos" + currentNode.position);
+
         }
 
         path.Reverse();
