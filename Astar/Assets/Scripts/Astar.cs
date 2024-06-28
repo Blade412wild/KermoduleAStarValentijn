@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -41,7 +42,6 @@ public class Astar
         beginNode.GScore = 0;
         beginNode.HScore = Vector2.Distance(beginNode.position, endPos);
         closedNodes.Add(beginNode);
-        //openNodes.Add(beginNode);
 
         Node endNode = nodeGrid[endPos.x, endPos.y];
 
@@ -51,15 +51,12 @@ public class Astar
         while (foundPath == false)
         {
 
-            //Debug.Log("iteratie : " + counter);
-            //Debug.Log("currentNode postion = " + currentNode.position);
-
             if (currentNode.position == endPos)
             {
                 foundPath = true;
                 Debug.Log("foundPath");
                 List<Vector2Int> path = RetracePath(beginNode, endNode);
-                ListSortTest(openNodes);
+                //ListSortTest(openNodes);
                 DateTime endTime = DateTime.Now;
 
                 TimeSpan timePast = endTime - startTime;
@@ -80,10 +77,7 @@ public class Astar
                 counter++;
 
             }
-
         }
-
-
 
         return null;
     }
@@ -98,11 +92,12 @@ public class Astar
     {
         // deze moet bij het begin op true, daardoor krijgt de besteFScore de waarde van de eerste neighbhour
         bool isBestFScoreNull = true;
-        float bestFScore = 10000000.0f;
+        float bestFScore = 0.0f;
         Vector2Int newPos = new Vector2Int(0, 0);
 
         //Debug.Log("openlist count : " + _openList.Count);
 
+        _openList.OrderBy((x) => x.FScore);
 
         // getting de Fscore Data from the neigbours and comparing them
         foreach (Node openNode in _openList)
@@ -114,17 +109,11 @@ public class Astar
                 isBestFScoreNull = false;
             }
 
-            if (isBestFScoreNull == false && bestFScore > openNode.FScore)
+            if (isBestFScoreNull == false && openNode.FScore < bestFScore)
             {
                 bestFScore = openNode.FScore;
-                //openNode.parent = _currentNode;
             }
-
-            
         }
-
-        List<Node> hallo = new List<Node>();
-        hallo.Sort();
 
         Node nodeWithBestFScore = null;
         // matching 
@@ -281,39 +270,6 @@ public class Astar
         path.Reverse();
         return path;
     }
-
-    private void ListSortTest(List<Node> OpenList)
-    {
-        List<float> fCostList = new List<float>(); 
-        LinkedList<float> list = new LinkedList<float>();
-
-        // unsort Nodes
-        foreach (Node node in OpenList)
-        {
-            //Debug.Log(node);
-            fCostList.Add(node.FScore);
-        }
-
-        //Debug.Log("--------unsorted---------");
-
-        foreach(float fScore in fCostList)
-        {
-            //Debug.Log(fScore);
-        }
-
-        fCostList.Sort();
-
-        //Debug.Log("--------sorted---------");
-
-        foreach (float pos in fCostList)
-        {
-            //Debug.Log(pos);
-        }
-
-    }
-
-
-
 
     /// <summary>
     /// This is the Node class you can use this class to store calculated FScores for the cells of the grid, you can leave this as it is
