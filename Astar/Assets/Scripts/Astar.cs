@@ -73,8 +73,8 @@ public class Astar
                 // Get neigbours
                 startTime2 = DateTime.Now;
 
-                //neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
-                neighbourList = GetNeighbours2(currentNode, allNodes, openNodes, grid, closedNodes, endPos, allNodesDic);
+                neighbourList = GetNeighbours(currentNode, allNodes, openNodes, grid, closedNodes, endPos);
+                //neighbourList = GetNeighbours2(currentNode, allNodes, openNodes, grid, closedNodes, endPos, allNodesDic);
 
                 endTime2 = DateTime.Now;
                 timePast2 = endTime2 - startTime2;
@@ -89,7 +89,7 @@ public class Astar
 
                 Debug.Log("---------- calculate Best FScore --------");
                 startTime2 = DateTime.Now;
-                Vector2Int newDestination = CalculaterNewPos(neighbourList, closedNodes, openNodes, currentNode);
+                Vector2Int newDestination = GetNewPos(neighbourList, closedNodes, openNodes, currentNode);
 
                 endTime2 = DateTime.Now;
                 timePast2 = endTime2 - startTime2;
@@ -113,51 +113,34 @@ public class Astar
         _currentNode.position = _newDestination;
     }
 
-    private Vector2Int CalculaterNewPos(List<Node> _neighbourList, List<Node> _closedList, List<Node> _openList, Node _currentNode)
+    private Vector2Int GetNewPos(List<Node> _neighbourList, List<Node> _closedList, List<Node> _openList, Node _currentNode)
     {
         // deze moet bij het begin op true, daardoor krijgt de besteFScore de waarde van de eerste neighbhour
         bool isBestFScoreNull = true;
         float bestFScore = Mathf.Infinity;
-        Vector2Int newPos = new Vector2Int(0, 0);
-
-        //Debug.Log("openlist count : " + _openList.Count);
-
-        _openList.OrderBy((x) => x.FScore);
+        Node bestNode = new Node(); 
 
         // getting de Fscore Data from the neigbours and comparing them
         foreach (Node openNode in _openList)
         {
-            //Debug.Log("bestFScore = " + openNode.FScore);
             if (isBestFScoreNull == true)
             {
                 bestFScore = openNode.FScore;
+                bestNode = openNode;
                 isBestFScoreNull = false;
             }
 
             if (isBestFScoreNull == false && openNode.FScore < bestFScore)
             {
                 bestFScore = openNode.FScore;
+                bestNode = openNode;
             }
         }
 
-        Node nodeWithBestFScore = null;
-        // matching 
-        foreach (Node openNode in _openList)
-        {
-            if (bestFScore == openNode.FScore)
-            {
-                nodeWithBestFScore = openNode;
-                newPos = openNode.position;
+        _openList.Remove(bestNode);
+        _closedList.Add(bestNode);
 
-                break;
-            }
-        }
-        _openList.Remove(nodeWithBestFScore);
-        //Debug.Log("removed node form open list with position : " + nodeWithBestFScore.position);
-        _closedList.Add(nodeWithBestFScore);
-        //Debug.Log("Added node to closed list with position : " + nodeWithBestFScore.position);
-
-        return newPos;
+        return bestNode.position;
     }
 
     private List<Node> GetNeighbours(Node currentNode, List<Node> _allNodesList, List<Node> _openList, Cell[,] _grid, List<Node> _closedNode, Vector2Int _endPos)
@@ -276,7 +259,7 @@ public class Astar
                 nodeGrid[x, y] = node;
 
                 _allNodesList.Add(node);
-                _allNodeDic.Add(node.position, node);
+                //_allNodeDic.Add(node.position, node);
 
             }
         }
@@ -292,9 +275,7 @@ public class Astar
             CalculateValueH(_currentNode, _endPos, neighbour);
             CalculateValueG(_currentNode, neighbour);
 
-            //Debug.Log("neighbour " + neigbourId + " postion " + neighbour.position + " HScore = " + neighbour.HScore + " GScore = " + neighbour.GScore + " FScore = " + neighbour.FScore + " || neigbourParent position : " + neighbour.parent.position + " parent G score : " + neighbour.parent.GScore);
             neigbourId++;
-
         }
 
         neigbourId = 1;
